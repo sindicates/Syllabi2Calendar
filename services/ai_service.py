@@ -57,7 +57,26 @@ client = genai.Client(api_key=api_key)
 def extract_assignments(markdown_text):
     model_name = "gemini-3.1-flash-lite-preview"
 
-    prompt = f"Extract assignments (quizzes, homework, exams, etc.) as JSON from the following text: {markdown_text}"
+    prompt = f"""You are a data engineer. Extract all academic events from the syllabus. 
+                Return ONLY a JSON array of specific instances. 
+
+                Rules:
+                1. For recurring items like 'Weekly Homework on Thursdays', generate an 
+                entry for EVERY individual Thursday between the start and end of the semester.
+                2. Format: 
+                [
+                    {{
+                    "summary": "Homework 1, Class Name",
+                    "start": "2026-01-22",
+                    "end": "2026-01-22",
+                    "description": "Weekly assignment"
+                    }}
+                ]
+                3. If a specific time is provided, use ISO 8601 format (YYYY-MM-DDTHH:MM:SS). 
+                4. If it is an all-day event, just use YYYY-MM-DD.
+                5. If the year is missing, assume 2026.
+                Here is the syllabus: {markdown_text}
+                """
 
     # region agent log
     try:
