@@ -18,66 +18,36 @@ client = genai.Client(api_key=api_key)
 def extract_assignments(markdown_text):
     model_name = "gemini-3.1-flash-lite-preview"
 
-    prompt = f"""You are a data engineer. Extract all academic events from the syllabus. 
-                Return ONLY a JSON array of specific instances. 
+    prompt = f"""
+            You are an academic data engineer. Extract all assignments, quizzes, and exams from the syllabus.
+            Return ONLY a JSON array.
 
-                Rules:
-                1. For recurring items like 'Weekly Homework on Thursdays', generate an 
-                entry for EVERY individual Thursday between the start and end of the semester.
-                2. Format: 
-                [
-                    {{
-                    "summary": "Homework 1, Class Name",
-                    "start": "2026-01-22",
-                    "end": "2026-01-22",
-                    "description": "Weekly assignment"
-                    }}
-                ]
-                3. If a specific time is provided, use ISO 8601 format (YYYY-MM-DDTHH:MM:SS). 
-                4. If it is an all-day event, just use YYYY-MM-DD.
-                5. If the year is missing, assume 2026.
-                Here is the syllabus: {markdown_text}
-                """
+            TIMEZONE & LOCALIZATION RULES:
+            1. SCHOOL IDENTIFICATION: Identify the school/university from the syllabus text.
+            2. TIMEZONE DETECTION: Determine the exact IANA Timezone ID for that school (e.g., 'America/New_York' for CWRU, 'America/Chicago' for UChicago).
+            3. TIMED EVENTS: If a specific clock time is mentioned (e.g., 2:00 PM), return it in "YYYY-MM-DDTHH:MM:SS" format. 
+            Do NOT include a UTC offset (like +00:00).
+            4. ALL-DAY EVENTS: If NO time is mentioned, return ONLY "YYYY-MM-DD".
+            5. DURATION: If an end time is missing, set it to 1 hour after the start time.
+            6. ASSIGNMENT DUE DATES: If a syllabus says "Due by [Date]" with no time, return ONLY the date (All-Day).
 
-    # region agent log
-    try:
-        _data = {
-            "sessionId": "4da1d4",
-            "runId": "pre-fix-gemini",
-            "hypothesisId": "H3",
-            "location": "services/ai_service.py:before_generate",
-            "message": "Before calling Gemini generate_content",
-            "data": {
-                "model_name": model_name,
-                "markdown_length": len(markdown_text) if isinstance(markdown_text, str) else None,
-            },
-            "timestamp": int(_time.time() * 1000),
-        }
-        with open("debug-4da1d4.log", "a", encoding="utf-8") as _f:
-            _f.write(_json.dumps(_data) + "\n")
-    except Exception:
-        pass
-    # endregion
+            JSON STRUCTURE:
+            {{
+            "timezone": "IANA_TIMEZONE_ID", 
+            "assignments": [
+                {{
+                "summary": "Midterm Exam",
+                "start": "2026-03-24T14:00:00",
+                "end": "2026-03-24T15:00:00",
+                "description": "Chapters 1-5"
+                }}
+            ]
+            }}
 
+            SYLLABUS TEXT:
+            {markdown_text}
+            """
+  
     response = client.models.generate_content(model=model_name, contents=prompt)
-
-    # region agent log
-    try:
-        _data = {
-            "sessionId": "4da1d4",
-            "runId": "pre-fix-gemini",
-            "hypothesisId": "H3",
-            "location": "services/ai_service.py:after_generate",
-            "message": "After calling Gemini generate_content",
-            "data": {
-                "has_text": hasattr(response, "text"),
-            },
-            "timestamp": int(_time.time() * 1000),
-        }
-        with open("debug-4da1d4.log", "a", encoding="utf-8") as _f:
-            _f.write(_json.dumps(_data) + "\n")
-    except Exception:
-        pass
-    # endregion
 
     return json.loads(response.text.strip("`").replace("json", ""))

@@ -4,6 +4,7 @@ python-multipart
 pymupdf
 google-api-python-client
 google-auth-oauthlib
+google-auth-httplib2
 google
 google.genai
 python-dotenv
