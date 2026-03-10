@@ -1,16 +1,37 @@
+# Import Libraries
+import pymupdf4llm
+import fitz
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+import os
+from dotenv import load_dotenv
+from services.ai_service import extract_assignments
+import json as _json
+import time as _time
 
+# Initialize FastAPI
 app = FastAPI()
+load_dotenv()
 
-
+# Home Route
 @app.get("/")
-async def read_root():
-    return {"message": "Hello World"}
+def home():
+    return {"message": "Scanner Backend is Online"}
 
 
-@app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...)):
-    # Placeholder implementation for now
-    return JSONResponse({"filename": file.filename, "status": "received"})
+# Scan PDF Route
+@app.post("/scan")
+async def scan_pdf(file: UploadFile = File(...)):
+    
+    content = await file.read()
 
+    doc = fitz.open(stream=content, filetype="pdf")
+
+    md_text = pymupdf4llm.to_markdown(doc=doc)
+
+    assignments = extract_assignments(markdown_text=md_text)
+
+    return {
+        "filename": file.filename,
+        "raw_markdown": md_text,
+        "assignments": assignments,
+    }
