@@ -37,77 +37,18 @@ async def scan_pdf(file: UploadFile = File(...)):
     school_tz = assignments.get("timezone")
     events_to_create = assignments.get("assignments", [])
 
+    return assignments
     created_event_links = []
 
-    # region agent log
-    try:
-        with open("debug-b18514.log", "a", encoding="utf-8") as _f:
-            _f.write(_json.dumps({
-                "sessionId": "b18514",
-                "runId": "pre-fix",
-                "hypothesisId": "H1",
-                "location": "main.py:scan_pdf",
-                "message": "Assignments extracted",
-                "data": {
-                    "has_timezone": school_tz is not None,
-                    "timezone": school_tz,
-                    "events_count": len(events_to_create)
-                },
-                "timestamp": int(_time.time() * 1000)
-            }) + "\n")
-    except Exception:
-        pass
-    # endregion agent log
-
-    for item in events_to_create: 
+    for event in events_to_create:
         
-        try: 
-            link = create_event(event_data=item, school_tz=school_tz)
+        try:
 
-            # region agent log
-            try:
-                with open("debug-b18514.log", "a", encoding="utf-8") as _f:
-                    _f.write(_json.dumps({
-                        "sessionId": "b18514",
-                        "runId": "pre-fix",
-                        "hypothesisId": "H2",
-                        "location": "main.py:scan_pdf",
-                        "message": "create_event result",
-                        "data": {
-                            "event_summary": item.get("summary"),
-                            "link_is_none": link is None
-                        },
-                        "timestamp": int(_time.time() * 1000)
-                    }) + "\n")
-            except Exception:
-                pass
-            # endregion agent log
-
-            if link:
-                created_event_links.append(link)
+            event_link = create_event(event_data=event, school_tz=school_tz)
+            created_event_links.append(event_link)
 
         except Exception as e:
             print(f"Error creating event: {e}")
-
-            # region agent log
-            try:
-                with open("debug-b18514.log", "a", encoding="utf-8") as _f:
-                    _f.write(_json.dumps({
-                        "sessionId": "b18514",
-                        "runId": "pre-fix",
-                        "hypothesisId": "H3",
-                        "location": "main.py:scan_pdf",
-                        "message": "Error in create_event",
-                        "data": {
-                            "event_summary": item.get("summary"),
-                            "error": str(e)
-                        },
-                        "timestamp": int(_time.time() * 1000)
-                    }) + "\n")
-            except Exception:
-                pass
-            # endregion agent log
-
             continue
 
     return {
