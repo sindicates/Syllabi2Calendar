@@ -9,3 +9,13 @@ google
 google.genai
 python-dotenv
 pymupdf4llm
+
+
+@tailwindcss/postcss
+@types/node
+@types/react
+@types/react-dom
+eslint
+eslint-config-next
+tailwindcss
+typescript
